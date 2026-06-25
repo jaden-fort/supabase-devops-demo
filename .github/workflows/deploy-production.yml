@@ -1,0 +1,60 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/**"
+      - "web/**"
+      - ".github/workflows/deploy-production.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy production database
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: latest
+          github-token: ${{ github.token }}
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Push database migrations
+        run: supabase db push
+
+      - name: Build static web artifact
+        run: |
+          cp web/env.example.js web/env.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const config = {
+            url: process.env.SUPABASE_URL,
+            anonKey: process.env.SUPABASE_ANON_KEY,
+          };
+          if (!config.url || !config.anonKey) {
+            throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required');
+          }
+          fs.writeFileSync('web/env.js', `window.__SUPABASE_CONFIG__ = ${JSON.stringify(config, null, 2)};\n`);
+          NODE
+
+      - name: Upload production web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fort-database-demo-production-web
+          path: web
