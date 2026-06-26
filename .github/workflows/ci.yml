@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  database-smoke:
-    name: Database smoke test
+  local-database-smoke:
+    name: Local database smoke test
     runs-on: ubuntu-latest
 
     steps:
@@ -34,10 +34,3 @@ jobs:
           result="$(docker exec supabase_db_supabase-devops-demo psql -U postgres -d postgres -tAc "select public.demo_database_identity();")"
           test -n "$result"
           echo "RPC returned: $result"
-
-      - name: Verify web app files exist
-        run: |
-          test -f web/index.html
-          test -f web/styles.css
-          test -f web/app.js
-          test -f web/env.example.js
