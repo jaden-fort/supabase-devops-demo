@@ -55,7 +55,8 @@ for you.
 
 1. Push this repository to GitHub.
 2. Create the `develop` branch from `main`.
-3. Add a repository secret:
+3. Add a repository secret (used by the staging and production deploy workflows
+   to authenticate the Supabase CLI):
    - `SUPABASE_ACCESS_TOKEN`
 4. Create a `staging` environment and add:
    - `SUPABASE_PROJECT_ID`
@@ -116,9 +117,17 @@ link projects for you.
 3. CI starts a fresh local Supabase database and verifies the RPC returns a value.
 4. Merge to `develop`; GitHub Actions deploys migrations to staging.
 5. Create `release/demo-1` from `develop` and open a PR into `main`.
-6. Supabase Branching creates a preview database for the release PR.
+6. Supabase Branching creates a preview database for the release PR (review it in
+   Supabase as needed; CI does not test it).
 7. Merge to `main`; approve the production environment job; production migrations
    deploy and the production web artifact points at production Supabase.
+
+## CI Database Strategy
+
+CI runs a single check: on PRs into `develop` or `main` it starts a throwaway
+local Supabase database on the runner and verifies the RPC with `psql`. Fast,
+isolated, and free. Migrations reach staging and production when commits land on
+`develop` and `main` (see the deploy workflows), not from CI.
 
 ## Environment Labels
 
