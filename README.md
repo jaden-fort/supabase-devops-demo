@@ -19,34 +19,30 @@ Postgres with `current_database()`.
 - `web/`: plain HTML, CSS, and JavaScript app.
 - `.github/workflows`: CI plus staging and production deployment workflows.
 
+
+
 ## Local Setup
 
 1. Install the Supabase CLI and Docker.
 2. Start the local database:
-
-   ```bash
+  ```bash
    supabase db start
-   ```
-
+  ```
 3. Copy the example browser config:
-
-   ```bash
+  ```bash
    cp web/env.example.js web/env.js
-   ```
-
+  ```
 4. Replace the placeholder anon key in `web/env.js` with the local anon key from:
-
-   ```bash
+  ```bash
    supabase status
-   ```
-
+  ```
 5. Serve the page from the repo root:
-
-   ```bash
+  ```bash
    python3 -m http.server 3000
-   ```
-
+  ```
 6. Open `http://127.0.0.1:3000/web/`.
+
+
 
 ## Manual GitHub Setup
 
@@ -56,25 +52,27 @@ for you.
 1. Push this repository to GitHub.
 2. Create the `develop` branch from `main`.
 3. Add a repository secret (used by the staging and production deploy workflows
-   to authenticate the Supabase CLI):
-   - `SUPABASE_ACCESS_TOKEN`
+  to authenticate the Supabase CLI):
+  - `SUPABASE_ACCESS_TOKEN`
 4. Create a `staging` environment and add:
-   - `SUPABASE_PROJECT_ID`
-   - `SUPABASE_DB_PASSWORD`
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
+  - `SUPABASE_PROJECT_ID`
+  - `SUPABASE_DB_PASSWORD`
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
 5. Create a `production` environment and add the same names with production values.
 6. Protect `develop`:
-   - require pull requests
-   - require the CI check
-   - block force pushes and deletion
+  - require pull requests
+  - require the CI check
+  - block force pushes and deletion
 7. Protect `main`:
-   - require pull requests
-   - require the CI check
-   - require review
-   - block force pushes and deletion
+  - require pull requests
+  - require the CI check
+  - require review
+  - block force pushes and deletion
 8. Add a required reviewer to the `production` environment so production deploys
-   pause for approval.
+  pause for approval.
+
+
 
 ## Manual Supabase Setup
 
@@ -89,26 +87,30 @@ link projects for you.
 6. Set the working directory to `.` because `supabase/` is at the repo root.
 7. Enable automatic branching for PR previews.
 8. Keep automatic production deployment disabled if GitHub Actions should remain
-   the deploy authority.
+  the deploy authority.
+
+gtest
 
 ## Docs
 
 - Supabase local development CLI config:
-  https://supabase.com/docs/guides/local-development/cli/config
+[https://supabase.com/docs/guides/local-development/cli/config](https://supabase.com/docs/guides/local-development/cli/config)
 - Supabase managing environments:
-  https://supabase.com/docs/guides/deployment/managing-environments
+[https://supabase.com/docs/guides/deployment/managing-environments](https://supabase.com/docs/guides/deployment/managing-environments)
 - Supabase branching:
-  https://supabase.com/docs/guides/deployment/branching
+[https://supabase.com/docs/guides/deployment/branching](https://supabase.com/docs/guides/deployment/branching)
 - Supabase JavaScript RPC:
-  https://supabase.com/docs/reference/javascript/rpc
+[https://supabase.com/docs/reference/javascript/rpc](https://supabase.com/docs/reference/javascript/rpc)
 - Supabase CLI GitHub Action:
-  https://github.com/supabase/setup-cli
+[https://github.com/supabase/setup-cli](https://github.com/supabase/setup-cli)
 - GitHub Actions secrets:
-  https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
+[https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)
 - GitHub environments:
-  https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment
+[https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
 - GitHub protected branches:
-  https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches
+[https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
+
+
 
 ## Demo Flow
 
@@ -118,9 +120,11 @@ link projects for you.
 4. Merge to `develop`; GitHub Actions deploys migrations to staging.
 5. Create `release/demo-1` from `develop` and open a PR into `main`.
 6. Supabase Branching creates a preview database for the release PR (review it in
-   Supabase as needed; CI does not test it).
+  Supabase as needed; CI does not test it).
 7. Merge to `main`; approve the production environment job; production migrations
-   deploy and the production web artifact points at production Supabase.
+  deploy and the production web artifact points at production Supabase.
+
+
 
 ## CI Database Strategy
 
