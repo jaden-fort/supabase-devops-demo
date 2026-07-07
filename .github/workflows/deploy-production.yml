@@ -1,29 +1,51 @@
-name: Deploy Production
+# Applies pending Supabase migrations to the production database whenever a
+# commit on main touches supabase/migrations/ (or config.toml).
+#
+# `supabase db push` compares supabase/migrations/*.sql against the remote
+# supabase_migrations.schema_migrations table and applies only versions not
+# yet present, so the run is a no-op when there is nothing new.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_ACCESS_TOKEN  - Supabase access token for CLI auth (CI/personal token).
+#   SUPABASE_DB_PASSWORD   - production database password, used by `db push`.
+#   SUPABASE_PROJECT_ID    - the remote project ref (20-char ref from the
+#                            dashboard URL, NOT the local `project_id = "fort-demo"`
+#                            slug in supabase/config.toml).
+
+name: Deploy Supabase Migrations
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
     paths:
-      - "supabase/**"
-      - "web/**"
-      - ".github/workflows/deploy-production.yml"
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
   workflow_dispatch:
 
+# Never apply migrations from two runs at once; queue instead of cancelling
+# so every merged migration still gets applied.
+concurrency:
+  group: supabase-migrations-prod
+  cancel-in-progress: false
+
 jobs:
-  deploy:
-    name: Deploy production database
+  migrate:
     runs-on: ubuntu-latest
+
+    # Requires a reviewer to approve before prod migrations run. Configure the
+    # required reviewer(s) on the `production` environment in GitHub:
+    # Settings -> Environments -> production -> Required reviewers.
     environment: production
+
+    permissions:
+      contents: 'read'
+
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-      SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
 
     steps:
-      - name: Check out repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Supabase CLI
@@ -31,29 +53,11 @@ jobs:
         with:
           version: latest
 
-      - name: Link production project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Link to production project
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
 
-      - name: Push database migrations
+      - name: Show pending migrations
+        run: supabase migration list
+
+      - name: Push migrations to production
         run: supabase db push
-
-      - name: Build static web artifact
-        run: |
-          cp web/env.example.js web/env.js
-          node - <<'NODE'
-          const fs = require('fs');
-          const config = {
-            url: process.env.SUPABASE_URL,
-            anonKey: process.env.SUPABASE_ANON_KEY,
-          };
-          if (!config.url || !config.anonKey) {
-            throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required');
-          }
-          fs.writeFileSync('web/env.js', `window.__SUPABASE_CONFIG__ = ${JSON.stringify(config, null, 2)};\n`);
-          NODE
-
-      - name: Upload production web artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fort-database-demo-production-web
-          path: web
